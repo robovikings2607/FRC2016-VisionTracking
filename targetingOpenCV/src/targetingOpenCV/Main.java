@@ -10,6 +10,8 @@ import java.awt.Graphics2D;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.DataBufferByte;
@@ -45,7 +47,7 @@ import org.opencv.videoio.VideoCapture;
 
 import edu.wpi.grip.core.sources.IPCameraFrameGrabber;
 
-public class Main {
+public class Main implements MouseListener {
 
 	static {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -82,10 +84,10 @@ public class Main {
     
     private final double cameraMountHeightInches = 12.75;
     
-    private boolean saveFrames = false;
+    private boolean saveFrames = false, pausePlayback = false;
     private String savedFramePath;
     private int savedFrameCount;
-    private boolean pausePlayback = false;
+
     
     private class imageSaver extends Thread {
         
@@ -116,28 +118,33 @@ public class Main {
                                 il3 = new ArrayList(),
                                 il4 = new ArrayList();
         private Iterator<Path> it1, it2, it3, it4;
+        private String fileName;
         
         public Mat grab() {
         	if (it1.hasNext()) {
-        		return Imgcodecs.imread(it1.next().toString());	
+        		fileName = it1.next().toString();	
         	} else {
         		if (it2.hasNext()) {
-        			return Imgcodecs.imread(it2.next().toString());
+        			fileName = it2.next().toString();
         		} else {
         			if (it3.hasNext()) {
-        				return Imgcodecs.imread(it3.next().toString());
+        				fileName = it3.next().toString();
         			} else {
         				if (it4.hasNext()) {
-        					return Imgcodecs.imread(it4.next().toString());
+        					fileName = it4.next().toString();
         				} else {
         					return null;
         				}
         			}
         		}
         	}
-        	
+        	return Imgcodecs.imread(fileName);
         }
         
+        public String getFileName() {
+        	System.out.println(fileName);
+        	return fileName;
+        }
         
         public savedImageStreamer(String savedImageDir) {
             try {           
@@ -535,20 +542,37 @@ public class Main {
         
         return null;
     }
-  
+    
+    public BufferedImage drawFilename(BufferedImage img) {
+		   ColorModel cm = img.getColorModel();
+		    boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
+		    WritableRaster raster = img.copyData(img.getRaster().createCompatibleWritableRaster());
+		    
+		BufferedImage gz = new BufferedImage(cm, raster, isAlphaPremultiplied, null);
+		Graphics2D g = gz.createGraphics();
+		g.setFont(new Font("Arial", Font.PLAIN, 10));
+		
+		
+		return gz;
+    }
+    		
     public void process(savedImageStreamer strm) {
+    	
     	Mat orig;
     	orig = strm.grab();
 		imgFrame.setSize(orig.width(), orig.height());
 		binFrame.setSize(orig.width(), orig.height());
+		imgFrame.addMouseListener(this);
+			
     	while (orig != null) {
+    		System.out.println("fileName: " + strm.getFileName());
     		Mat b = binarizeSubt(orig);
     		binIcon.setImage(matToBuf(b));
     		findTargets(b);
     		imgIcon.setImage(drawTargets(orig));
     		imgFrame.repaint();
     		binFrame.repaint();
-    		orig = strm.grab();
+    		if (!pausePlayback) orig = strm.grab();
     		try {Thread.sleep(20);} catch (Exception e) {}
     	}
     	
@@ -560,8 +584,26 @@ public class Main {
     public void process(String source) {
 
     	if (source.equalsIgnoreCase("stream")) {
+    		
+    		// image 300 shows position at end of auton
+    		// image 530 shows successful shot after teleop alignment after auton
+    		// images 1088 - 1264 show successful teleop lineup and shot
+    		// images 1555 - 1761 show lineup that's slightly off on the left
     		//process(new savedImageStreamer("d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24"));
-    		process(new savedImageStreamer("d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.15-26-8"));
+    		
+    		// no shot, just turning in auton
+    		//process(new savedImageStreamer("d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.17-44-47"));
+    		
+    		// practice field
+    		// images 1 - 50 show outerworks shot (I think)
+    		// image 499 is end of 2nd outerworks shot, after moving back a little, try looking around 480 and forward for start    		
+    		//process(new savedImageStreamer("d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-23-7"));
+    		
+    		// practice field
+    		// no shots;   looks like closer in than outerworks though...maybe images saved after successful shots taken?
+    		//process(new savedImageStreamer("d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-43-55"));
+    		// stops before any shots taken; shows auton drive and turn but no shot
+    		//process(new savedImageStreamer("d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.15-26-8"));
     	}
     	
     	if (source.startsWith("http:")) {
@@ -606,5 +648,36 @@ public class Main {
 		String webCam = "http://10.26.7.12/mjpg/video.mjpg";
 		theApp.process("stream");
     }
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		pausePlayback = !pausePlayback;
+		
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
 
 }
