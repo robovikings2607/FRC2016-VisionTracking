@@ -45,6 +45,7 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.*;
 import org.opencv.videoio.VideoCapture;
 
+import edu.wpi.first.smartdashboard.robot.Robot;
 import edu.wpi.grip.core.sources.IPCameraFrameGrabber;
 
 public class Main implements MouseListener {
@@ -200,6 +201,8 @@ public class Main implements MouseListener {
         targetHeights = new ArrayList<Double>();			// the height in pixels of each target (actually height of convex hull side)
         contours = new ArrayList<MatOfPoint>();
         hullPoints = new ArrayList<Point>();
+        Robot.setUseMDNS(true);
+        Robot.setTeam(2607);
 	}
 
 	private void setupButtons() {
@@ -372,7 +375,7 @@ public class Main implements MouseListener {
 		double distToTarget = (fovWorld / 2.0) / Math.tan(Math.toRadians(33.5 + cameraMountAngleDeg));
 		System.out.println("distToTarget: " + distToTarget);
 		
-		
+		Robot.getTable().putNumber("targetRange", range);
 		return range;
 		
 		
@@ -411,7 +414,9 @@ public class Main implements MouseListener {
 		// per Griffin's table:
 		double aimRad = Math.atan((distanceToTarget / (targetHeightOffFloorInches - cameraMountHeightInches)));
 		aimRad -= Math.PI / 2 - (Math.PI - Math.toRadians(cameraMountAngleDeg) - 1.16937/2.0);
-		return 90 - Math.toDegrees(aimRad);
+		double aimAngleDeg = 90 - Math.toDegrees(aimRad);
+		Robot.getTable().putNumber("aimAngleDeg", aimAngleDeg);
+		return aimAngleDeg;
 	}
 	
 	private BufferedImage drawTargets(BufferedImage img) {
