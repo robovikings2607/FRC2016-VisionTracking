@@ -79,10 +79,12 @@ public class Main implements MouseListener {
 //    private final double cameraVertFoVRad = Math.toRadians(51.0);
     private final double targetHeightInches = 12.0;  	
     
-    private final double targetHeightOffFloorInches = 85.0;   
+    private final double targetHeightOffFloorInches = 85.0;			//89.0;   
     private final double armPivotHeightInches = 12.0;
     
     private final double cameraMountHeightInches = 12.75;
+    private final double cameraMountAngleDeg = 54.0;		//52.0; //55.5;
+//    private final double cameraMountedMidFoVAngle = 180 - cameraMountAngleDeg;
     
     private boolean saveFrames = false, pausePlayback = false;
     private String savedFramePath;
@@ -244,6 +246,7 @@ public class Main implements MouseListener {
 			imgFrame.setSize(origImg.width(), origImg.height());
 			imgBuf = matToBuf(origImg);
 			return origImg;
+
 		} else {
 			System.out.println("couldn't load image");
 			return null;
@@ -350,24 +353,45 @@ public class Main implements MouseListener {
 	// returns distance to target in whatever unit the targetHeightWorld is specified in
 	// (e.g. inches, feet, centimeters, etc)
 	
-	private double targetDistance(double targetHeightPixels, double imgHeightPixels, 
+	private double targetDistance(Rect boundingRect, double targetHeightPixels, double imgHeightPixels, 
 									double targetHeightWorld) {
 				
 		System.out.println("targetHeightPixels: " + targetHeightPixels);
-		double fovWorld = targetHeightWorld * (imgHeightPixels / targetHeightPixels);		
-		double distToTarget = (fovWorld / 2.0) / Math.tan(cameraVertFoVRad);
-		return distToTarget;
+		System.out.println("boundingRect.height: " + boundingRect.height);
+		
+		double x = boundingRect.x + (boundingRect.width / 2);
+		double y = boundingRect.y + (boundingRect.height / 2);
+		System.out.println("boundingRect center: (" + x + "," + y + ")");
+		y = -((2 * (y / imgHeightPixels)) - 1);
+		System.out.println("y: " + y);
+		
+		double range = (89.0 - 12.75) / Math.tan((y * 67.0/2.0 + cameraMountAngleDeg)*Math.PI/180.0);
+		System.out.println("range: " + range);
+		
+		double fovWorld = targetHeightWorld * (imgHeightPixels / boundingRect.height);		
+		double distToTarget = (fovWorld / 2.0) / Math.tan(Math.toRadians(33.5 + cameraMountAngleDeg));
+		System.out.println("distToTarget: " + distToTarget);
+		
+		
+		return range;
 		
 		
 		// the target height off the floor is known (bottom is 85in, bottom of reflective tape is 83in)
+		// double range = (kTopTargetHeightIn-kCameraHeightIn)/Math.tan((y*kVerticalFOVDeg/2.0 + kCameraPitchDeg)*Math.PI/180.0);
+			// y is center of the bounding rect, which is 89in off the ground
+			// center of goal opening is 97in off ground
+			// (89in - 12.75in) / tan((y * 67.0/2.0 + cameraMountAngleDeg)*Math.PI/180.0) 
+
 		
+		// TargetHeightOffFloor - CameraMountHeight  
+		// ----------------------------------------
+		// tan (targetAngleOffGournd - (90 - (180 - cameraMountAngle - cameraVertFoV/2.0)))
 		
+		// targetAngleOffGround: calc proportionally, top is FoV, bottom is 0
+		//
 		
-		/*
-		double distToTarget = (.110236 * 12.0 * imgHeightPixels) / (target.height * .25);
-		return distToTarget;
-		*/
-				
+		// note per M1013 documentation, horizontal FoV is 67deg, vertical is 51deg, 2.8mm focalLength, 6.35mm sensor
+					
 	}
 	
 	private double aimAngleDeg(Rect target, double distanceToTarget) {
@@ -382,7 +406,12 @@ public class Main implements MouseListener {
 		// opposed to just at the bottom...anyway, tune to get consistent results
 		
 		double opposite = targetHeightOffFloorInches - armPivotHeightInches;
-		return Math.toDegrees(Math.atan(opposite / distanceToTarget));
+		System.out.println("aimAngle without Griffin's table: " + Math.toDegrees(Math.atan(opposite / distanceToTarget)));
+		
+		// per Griffin's table:
+		double aimRad = Math.atan((distanceToTarget / (targetHeightOffFloorInches - cameraMountHeightInches)));
+		aimRad -= Math.PI / 2 - (Math.PI - Math.toRadians(cameraMountAngleDeg) - 1.16937/2.0);
+		return 90 - Math.toDegrees(aimRad);
 	}
 	
 	private BufferedImage drawTargets(BufferedImage img) {
@@ -395,7 +424,8 @@ public class Main implements MouseListener {
 			else g.setColor(Color.RED);
 			Rect r = targetBoundingRects.get(x);
 			g.drawRect(r.x, r.y, r.width, r.height);
-			double d = targetDistance(targetHeights.get(x), img.getHeight(), targetHeightInches);
+			g.drawOval(r.x + (r.width / 2), r.y + (r.height / 2) - 5, 2, 2);
+			double d = targetDistance(r, targetHeights.get(x), img.getHeight(), targetHeightInches);
 			System.out.println("distance: " + d);
 			System.out.println("rect: (" + r.x + ',' + r.y + ") height: " + r.height + " width: " + r.width);
 			g.drawString(floatFmt.format(d), r.x, r.y + r.height + 10);
@@ -569,7 +599,7 @@ public class Main implements MouseListener {
     		Mat b = binarizeSubt(orig);
     		binIcon.setImage(matToBuf(b));
     		findTargets(b);
-    		imgIcon.setImage(drawTargets(orig));
+    		imgIcon.setImage(drawGreenZone(drawTargets(orig)));
     		imgFrame.repaint();
     		binFrame.repaint();
     		if (!pausePlayback) orig = strm.grab();
@@ -587,9 +617,9 @@ public class Main implements MouseListener {
     		
     		// image 300 shows position at end of auton
     		// image 530 shows successful shot after teleop alignment after auton
-    		// images 1088 - 1264 show successful teleop lineup and shot
+    		// images 1088 - 1264 show successful teleop lineup and shot (1262, 1263 show ball movement)
     		// images 1555 - 1761 show lineup that's slightly off on the left
-    		//process(new savedImageStreamer("d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24"));
+    		process(new savedImageStreamer("d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24"));
     		
     		// no shot, just turning in auton
     		//process(new savedImageStreamer("d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.17-44-47"));
@@ -630,10 +660,10 @@ public class Main implements MouseListener {
     		System.out.println("couldn't load " + source);
     		return;
     	}
-//		Mat b = binarizeSubt(orig);
+		Mat b = binarizeSubt(orig);
 //		binIcon.setImage(matToBuf(b));
-//		findTargets(b);
-		imgIcon.setImage(drawGreenZone(imgBuf));
+		findTargets(b);
+		imgIcon.setImage(drawGreenZone(drawTargets(imgBuf)));
 		imgFrame.repaint();
 //		binFrame.repaint();
     }
@@ -644,9 +674,12 @@ public class Main implements MouseListener {
 		//theApp.process("d:/FRC-2016/ControlsDesign/visionTargeting/RealFullField/7.jpg"); //7.jpg
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/savedImages-2016-1-29.20-31-57/Camera.2098.jpg";
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/savedImages-2016-1-29.20-31-57/Camera.2310.jpg";
-		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/Camera.634.jpg";
+//		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/Camera.634.jpg";
+//		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24/Camera.529.jpg";
+		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-23-7/Camera.495.jpg";
 		String webCam = "http://10.26.7.12/mjpg/video.mjpg";
-		theApp.process("stream");
+//		theApp.process("stream");
+		theApp.process(fileName);
     }
 
 	@Override
