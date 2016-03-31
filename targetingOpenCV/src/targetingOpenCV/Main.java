@@ -83,7 +83,7 @@ public class Main implements MouseListener {
     private final double armPivotHeightInches = 12.0;
     
     private final double cameraMountHeightInches = 12.75;
-    private final double cameraMountAngleDeg = 54.0;		//52.0; //55.5;
+    private final double cameraMountAngleDeg = 53.0;		//52.0; //55.5;
 //    private final double cameraMountedMidFoVAngle = 180 - cameraMountAngleDeg;
     
     private boolean saveFrames = false, pausePlayback = false;
@@ -365,7 +365,7 @@ public class Main implements MouseListener {
 		y = -((2 * (y / imgHeightPixels)) - 1);
 		System.out.println("y: " + y);
 		
-		double range = (89.0 - 12.75) / Math.tan((y * 67.0/2.0 + cameraMountAngleDeg)*Math.PI/180.0);
+		double range = (targetHeightOffFloorInches - cameraMountHeightInches) / Math.tan((y * 67.0/2.0 + cameraMountAngleDeg)*Math.PI/180.0);
 		System.out.println("range: " + range);
 		
 		double fovWorld = targetHeightWorld * (imgHeightPixels / boundingRect.height);		
@@ -675,8 +675,8 @@ public class Main implements MouseListener {
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/savedImages-2016-1-29.20-31-57/Camera.2098.jpg";
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/savedImages-2016-1-29.20-31-57/Camera.2310.jpg";
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/Camera.634.jpg";
-//		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24/Camera.529.jpg";
-		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-23-7/Camera.495.jpg";
+		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24/Camera.1263.jpg"; //529
+//		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-23-7/Camera.495.jpg"; 
 		String webCam = "http://10.26.7.12/mjpg/video.mjpg";
 //		theApp.process("stream");
 		theApp.process(fileName);
