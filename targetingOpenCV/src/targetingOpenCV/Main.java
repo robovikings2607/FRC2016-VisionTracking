@@ -297,6 +297,7 @@ public class Main implements MouseListener {
         System.out.println("Found " + contours.size() + " contours");
            
         double maxRatio = 0.0;
+        selectedTargetIndex = -1;
         for (MatOfPoint m : contours) {
         	MatOfInt hull = new MatOfInt();
         	hullPoints.clear();
@@ -315,16 +316,17 @@ public class Main implements MouseListener {
         	RotatedRect e = Imgproc.minAreaRect(matHull);
         	Rect rect = e.boundingRect();
         	double ratio = (double)rect.width / (double)rect.height;
-			System.out.println("bounding rect area: " + rect.area() + " aspect ratio: " + 
-					ratio);
-//			if (rect.width > 40 && rect.width < 1000 && rect.height > 40 && rect.height < 1000) {
+//			System.out.println("bounding rect area: " + rect.area() + " aspect ratio: " + 
+//					ratio);
+
+			//if (rect.width > 40 && rect.width < 1000 && rect.height > 40 && rect.height < 1000) {
 			// actual target ratio is 20in x 12in = 1.6
 			
 			// for now this still selects based on bounding box area and ratio
 			// for more precision, use hull:
 			//		identify nearly rectangular hulls, find their corners, get center point
-			if (rect.area() >= 500) {
-				System.out.println("\tadding target");
+			if (rect.area() >= 700 && rect.area() <= 9000 && ratio >= 1.45 && ratio <= 1.87 && rect.y < binImg.size().height * .53) {
+//				System.out.println("\tadding target");
 				targetBoundingRects.add(rect);
 				targets.add(matHull);
 				targetRotatedRects.add(e);
@@ -358,7 +360,7 @@ public class Main implements MouseListener {
 	
 	private double targetDistance(Rect boundingRect, double targetHeightPixels, double imgHeightPixels, 
 									double targetHeightWorld) {
-				
+/*				
 		System.out.println("targetHeightPixels: " + targetHeightPixels);
 		System.out.println("boundingRect.height: " + boundingRect.height);
 		
@@ -370,7 +372,7 @@ public class Main implements MouseListener {
 		
 		double range = (targetHeightOffFloorInches - cameraMountHeightInches) / Math.tan((y * 67.0/2.0 + cameraMountAngleDeg)*Math.PI/180.0);
 		System.out.println("Range (Ross): " + range);
-		
+*/		
 		double targetAngleInFOV = 67 - (((boundingRect.y + ((boundingRect.height) / 2))/imgHeightPixels) * 67);
 /*		System.out.println("Target Angle in FOV: " + targetAngleInFOV);
 		double range2 = (89 - 12.75) / (Math.tan(targetAngleInFOV - (Math.PI/2 - (Math.PI - Math.toRadians(51) - 1.169372/2))));
@@ -380,8 +382,8 @@ public class Main implements MouseListener {
 		double distToTarget = (fovWorld / 2.0) / Math.tan(Math.toRadians(33.5 + cameraMountAngleDeg));
 		System.out.println("distToTarget: " + distToTarget);
 		*/
-		Robot.getTable().putNumber("targetAngleInFOV", targetAngleInFOV);
-		return range;
+		//Robot.getTable().putNumber("targetAngleInFOV", targetAngleInFOV);
+		return targetAngleInFOV;
 		
 		
 		// the target height off the floor is known (bottom is 85in, bottom of reflective tape is 83in)
@@ -420,15 +422,30 @@ public class Main implements MouseListener {
 		double aimRad = Math.atan((distanceToTarget / (targetHeightOffFloorInches - cameraMountHeightInches)));
 		aimRad -= Math.PI / 2 - (Math.PI - Math.toRadians(cameraMountAngleDeg) - 1.16937/2.0);
 		double aimAngleDeg = 90 - Math.toDegrees(aimRad);
-		Robot.getTable().putNumber("aimAngleDeg", aimAngleDeg);
+		//Robot.getTable().putNumber("aimAngleDeg", aimAngleDeg);
 		return aimAngleDeg;
 	}
 	
 	private BufferedImage drawTargets(BufferedImage img) {
 
-		Graphics2D g = img.createGraphics();
-		g.setFont(new Font("Arial", Font.PLAIN, 10));
-	
+		
+		if (selectedTargetIndex >= 0) {
+			Graphics2D g = img.createGraphics();
+			g.setFont(new Font("Arial", Font.PLAIN, 10));
+			g.setColor(Color.GREEN);
+			Rect r = targetBoundingRects.get(selectedTargetIndex);
+			g.drawRect(r.x, r.y, r.width, r.height);
+			System.out.println("ratio: " + ((double)r.width / (double)r.height) + " area: " + r.area());
+			g.drawOval(r.x + (r.width / 2), r.y + (r.height / 2) - 5, 2, 2);
+			double d = targetDistance(r, targetHeights.get(selectedTargetIndex), img.getHeight(), targetHeightInches);
+			Robot.getTable().putNumber("targetAngleInFOV", d);
+			//System.out.println("distance: " + d);
+			//System.out.println("rect: (" + r.x + ',' + r.y + ") height: " + r.height + " width: " + r.width);
+			g.drawString(floatFmt.format(d), r.x, r.y + r.height + 10);			
+		} else {
+			Robot.getTable().putNumber("targetAngleInFOV", -999);
+		}
+/*	
 		for (int x = 0; x < targetBoundingRects.size(); x++) {
 			if (x == selectedTargetIndex) g.setColor(Color.GREEN);
 			else g.setColor(Color.RED);
@@ -441,10 +458,10 @@ public class Main implements MouseListener {
 			g.drawString(floatFmt.format(d), r.x, r.y + r.height + 10);
 			g.setColor(Color.PINK);
 			
-			double th = aimAngleDeg(r, d);
-			System.out.println("aim angle: " + th);		
+			//double th = aimAngleDeg(r, d);
+			//System.out.println("aim angle: " + th);		
 		}
-
+*/
 /*		
 		for (int x = 0; x < targetRotatedRects.size(); x++) {
 			int x1 = (int)targets.get(x).toList().get(0).x;
@@ -688,8 +705,8 @@ public class Main implements MouseListener {
 		String fileName = "c:/Users/FRC2607Dev/git/FRC2016-VisionTracking/HHImages/savedImages-2016-2-5.19-44-24/Camera.1263.jpg"; //529
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-23-7/Camera.495.jpg"; 
 		String webCam = "http://10.26.7.12/mjpg/video.mjpg";
-//		theApp.process("stream");
-		theApp.process(webCam);
+		theApp.process("stream");
+//		theApp.process(webCam);
     }
 
 	@Override
