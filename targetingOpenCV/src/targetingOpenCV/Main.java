@@ -358,8 +358,8 @@ public class Main implements MouseListener {
 	// returns distance to target in whatever unit the targetHeightWorld is specified in
 	// (e.g. inches, feet, centimeters, etc)
 	
-	private double targetDistance(Rect boundingRect, double targetHeightPixels, double imgHeightPixels, 
-									double targetHeightWorld) {
+	private double targetDistance(Rect boundingRect, RotatedRect rotatedRect, double targetHeightPixels, double imgHeightPixels, 
+									double imgWidthPixels, double targetHeightWorld) {
 /*				
 		System.out.println("targetHeightPixels: " + targetHeightPixels);
 		System.out.println("boundingRect.height: " + boundingRect.height);
@@ -374,6 +374,23 @@ public class Main implements MouseListener {
 		System.out.println("Range (Ross): " + range);
 */		
 		double targetAngleInFOV = 67 - (((boundingRect.y + ((boundingRect.height) / 2))/imgHeightPixels) * 67);
+//		double azimuth = this.boundAngle0to360Degrees(x*kHorizontalFOVDeg/2.0 + heading - kShooterOffsetDeg);
+
+		/*
+		 * imageWidthPixels		x distance from shot (<0 = left)
+		 * ---------------- =   ------------------------
+		 * 51deg				degrees to rotate (opposite sign)
+		 *
+		 * shot center is 187 from HH image 1263, 173 from HH image 529
+		 * 187 looks a little left; 173 looks pretty centered.  Try 175 to start  
+		 *
+		 */
+		
+		double x = boundingRect.x + (boundingRect.width / 2);  
+		System.out.println("x of target center from boundingRect: " + x);
+		System.out.println("x of target center from rotatedRect: " + rotatedRect.center.x);
+		double degToRotate = ((x - 175) * 51.0) / imgWidthPixels;
+		System.out.println("degToRotate: " + degToRotate);
 /*		System.out.println("Target Angle in FOV: " + targetAngleInFOV);
 		double range2 = (89 - 12.75) / (Math.tan(targetAngleInFOV - (Math.PI/2 - (Math.PI - Math.toRadians(51) - 1.169372/2))));
 		System.out.println("Range (Griff): " + range2);
@@ -382,7 +399,8 @@ public class Main implements MouseListener {
 		double distToTarget = (fovWorld / 2.0) / Math.tan(Math.toRadians(33.5 + cameraMountAngleDeg));
 		System.out.println("distToTarget: " + distToTarget);
 		*/
-		//Robot.getTable().putNumber("targetAngleInFOV", targetAngleInFOV);
+		Robot.getTable().putNumber("targetAngleInFOV", targetAngleInFOV);
+		Robot.getTable().putNumber("degToRotate", degToRotate);
 		return targetAngleInFOV;
 		
 		
@@ -434,16 +452,19 @@ public class Main implements MouseListener {
 			g.setFont(new Font("Arial", Font.PLAIN, 10));
 			g.setColor(Color.GREEN);
 			Rect r = targetBoundingRects.get(selectedTargetIndex);
+			RotatedRect rr = targetRotatedRects.get(selectedTargetIndex);
 			g.drawRect(r.x, r.y, r.width, r.height);
+//			g.drawOval((int)rr.center.x, (int)rr.center.y, (int)rr.size.width, (int)rr.size.height);
 			System.out.println("ratio: " + ((double)r.width / (double)r.height) + " area: " + r.area());
 			g.drawOval(r.x + (r.width / 2), r.y + (r.height / 2) - 5, 2, 2);
-			double d = targetDistance(r, targetHeights.get(selectedTargetIndex), img.getHeight(), targetHeightInches);
-			Robot.getTable().putNumber("targetAngleInFOV", d);
+			double d = targetDistance(r, rr, targetHeights.get(selectedTargetIndex), img.getHeight(), img.getWidth(), targetHeightInches);
+			
 			//System.out.println("distance: " + d);
 			//System.out.println("rect: (" + r.x + ',' + r.y + ") height: " + r.height + " width: " + r.width);
 			g.drawString(floatFmt.format(d), r.x, r.y + r.height + 10);			
 		} else {
 			Robot.getTable().putNumber("targetAngleInFOV", -999);
+			Robot.getTable().putNumber("degToRotate", -999);
 		}
 /*	
 		for (int x = 0; x < targetBoundingRects.size(); x++) {
@@ -609,7 +630,6 @@ public class Main implements MouseListener {
 		Graphics2D g = gz.createGraphics();
 		g.setFont(new Font("Arial", Font.PLAIN, 10));
 		
-		
 		return gz;
     }
     		
@@ -702,11 +722,11 @@ public class Main implements MouseListener {
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/savedImages-2016-1-29.20-31-57/Camera.2098.jpg";
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/savedImages-2016-1-29.20-31-57/Camera.2310.jpg";
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/Camera.634.jpg";
-		String fileName = "c:/Users/FRC2607Dev/git/FRC2016-VisionTracking/HHImages/savedImages-2016-2-5.19-44-24/Camera.1263.jpg"; //529
+		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24/Camera.1263.jpg"; //529
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-23-7/Camera.495.jpg"; 
 		String webCam = "http://10.26.7.12/mjpg/video.mjpg";
-		theApp.process("stream");
-//		theApp.process(webCam);
+//		theApp.process("stream");
+		theApp.process(webCam);
     }
 
 	@Override
