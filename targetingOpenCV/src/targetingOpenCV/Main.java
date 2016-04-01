@@ -369,13 +369,18 @@ public class Main implements MouseListener {
 		System.out.println("y: " + y);
 		
 		double range = (targetHeightOffFloorInches - cameraMountHeightInches) / Math.tan((y * 67.0/2.0 + cameraMountAngleDeg)*Math.PI/180.0);
-		System.out.println("range: " + range);
+		System.out.println("Range (Ross): " + range);
+		
+		double targetAngleInFOV = 67 - (((boundingRect.y + ((boundingRect.height) / 2))/imgHeightPixels) * 67);
+/*		System.out.println("Target Angle in FOV: " + targetAngleInFOV);
+		double range2 = (89 - 12.75) / (Math.tan(targetAngleInFOV - (Math.PI/2 - (Math.PI - Math.toRadians(51) - 1.169372/2))));
+		System.out.println("Range (Griff): " + range2);
 		
 		double fovWorld = targetHeightWorld * (imgHeightPixels / boundingRect.height);		
 		double distToTarget = (fovWorld / 2.0) / Math.tan(Math.toRadians(33.5 + cameraMountAngleDeg));
 		System.out.println("distToTarget: " + distToTarget);
-		
-		Robot.getTable().putNumber("targetRange", range);
+		*/
+		Robot.getTable().putNumber("targetAngleInFOV", targetAngleInFOV);
 		return range;
 		
 		
@@ -543,16 +548,16 @@ public class Main implements MouseListener {
             System.out.println("starting capture");
             BufferedImage img = camGrabber.grabBufferedImage();
             imgFrame.setSize(img.getWidth(), img.getHeight());
-//            binFrame.setSize(img.getWidth(), img.getHeight());
+            binFrame.setSize(img.getWidth(), img.getHeight());
 //            Mat camMat = calib.getCameraMatrix();
 //            Mat distort = calib.getDistortMatrix();
 //            Mat correctedImg = new Mat();
             do {
 //            	Imgproc.undistort(bufToMat(img), correctedImg, camMat, distort);
-//        		Mat b = binarizeSubt(correctedImg);
-//        		binIcon.setImage(matToBuf(b));
-//        		findTargets(b);
-            	BufferedImage gz = drawGreenZone(img);
+        		Mat b = binarizeSubt(bufToMat(img));
+        		binIcon.setImage(matToBuf(b));
+        		findTargets(b);
+            	BufferedImage gz = drawGreenZone(drawTargets(img));
         		imgIcon.setImage(gz);
         		imgFrame.repaint();
         		if (saveFrames) {
@@ -560,7 +565,7 @@ public class Main implements MouseListener {
         			new imageSaver(gz, "GreenZone", savedFrameCount).start();
         			savedFrameCount += 1;
         		}
-//        		binFrame.repaint();
+        		binFrame.repaint();
         		img = camGrabber.grabBufferedImage();
             } while(true);
         } catch (Exception e) {
@@ -680,11 +685,11 @@ public class Main implements MouseListener {
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/savedImages-2016-1-29.20-31-57/Camera.2098.jpg";
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/savedImages-2016-1-29.20-31-57/Camera.2310.jpg";
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/Camera.634.jpg";
-		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24/Camera.1263.jpg"; //529
+		String fileName = "c:/Users/FRC2607Dev/git/FRC2016-VisionTracking/HHImages/savedImages-2016-2-5.19-44-24/Camera.1263.jpg"; //529
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-23-7/Camera.495.jpg"; 
 		String webCam = "http://10.26.7.12/mjpg/video.mjpg";
 //		theApp.process("stream");
-		theApp.process(fileName);
+		theApp.process(webCam);
     }
 
 	@Override
