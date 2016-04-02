@@ -325,7 +325,10 @@ public class Main implements MouseListener {
 			// for now this still selects based on bounding box area and ratio
 			// for more precision, use hull:
 			//		identify nearly rectangular hulls, find their corners, get center point
-			if (rect.area() >= 700 && rect.area() <= 9000 && ratio >= 1.45 && ratio <= 1.87 && rect.y < binImg.size().height * .53) {
+        	
+			if (rect.area() >= 1000 && rect.area() <= 9000 && ratio >= 1.4 && ratio <= 3.3 //&& rect.y < binImg.size().height * .53
+					) {
+				System.out.println("Rect area: " + rect.area());
 //				System.out.println("\tadding target");
 				targetBoundingRects.add(rect);
 				targets.add(matHull);
