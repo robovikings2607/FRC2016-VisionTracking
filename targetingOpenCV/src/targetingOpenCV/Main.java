@@ -67,7 +67,10 @@ public class Main implements MouseListener {
     private Calibrate calib;
 	private ArrayList<MatOfPoint> contours;
 	private ArrayList<Point> hullPoints;
-
+	private Font normalFont = new Font("Arial", Font.PLAIN, 10),
+				 boldFont = new Font("Arial", Font.BOLD, 12);
+	private double targetAngleInFOV, degToRotate;
+	
     //private final double cameraVertFoVRad = Math.atan(99.25 / 208.5) / 1.212;  // measured
     	// the above is tuned to get expected distance from the sample image & measurements
     	//	but an uncalibrated sample image
@@ -376,8 +379,8 @@ public class Main implements MouseListener {
 		double range = (targetHeightOffFloorInches - cameraMountHeightInches) / Math.tan((y * 67.0/2.0 + cameraMountAngleDeg)*Math.PI/180.0);
 		System.out.println("Range (Ross): " + range);
 */		
-		double targetAngleInFOV = 67 - (((boundingRect.y + ((boundingRect.height) / 2))/imgHeightPixels) * 67);
-//		double azimuth = this.boundAngle0to360Degrees(x*kHorizontalFOVDeg/2.0 + heading - kShooterOffsetDeg);
+		targetAngleInFOV = 67 - (((boundingRect.y + ((boundingRect.height) / 2))/imgHeightPixels) * 67);
+
 
 		/*
 		 * imageWidthPixels		x distance from shot (<0 = left)
@@ -392,7 +395,9 @@ public class Main implements MouseListener {
 		double x = boundingRect.x + (boundingRect.width / 2);  
 		System.out.println("x of target center from boundingRect: " + x);
 		System.out.println("x of target center from rotatedRect: " + rotatedRect.center.x);
-		double degToRotate = ((x - 175) * 51.0) / imgWidthPixels;
+		degToRotate = ((x - 175) * 51.0) / imgWidthPixels;
+//		double azimuth = this.boundAngle0to360Degrees(x*kHorizontalFOVDeg/2.0 + heading - kShooterOffsetDeg);
+//		System.out.println("azimuth: " + ((2 * (x / imgWidthPixels)) - 1) * (51.0 / 2.0));  
 		System.out.println("degToRotate: " + degToRotate);
 /*		System.out.println("Target Angle in FOV: " + targetAngleInFOV);
 		double range2 = (89 - 12.75) / (Math.tan(targetAngleInFOV - (Math.PI/2 - (Math.PI - Math.toRadians(51) - 1.169372/2))));
@@ -452,7 +457,7 @@ public class Main implements MouseListener {
 		
 		if (selectedTargetIndex >= 0) {
 			Graphics2D g = img.createGraphics();
-			g.setFont(new Font("Arial", Font.PLAIN, 10));
+			g.setFont(normalFont);
 			g.setColor(Color.GREEN);
 			Rect r = targetBoundingRects.get(selectedTargetIndex);
 			RotatedRect rr = targetRotatedRects.get(selectedTargetIndex);
@@ -464,7 +469,13 @@ public class Main implements MouseListener {
 			
 			//System.out.println("distance: " + d);
 			//System.out.println("rect: (" + r.x + ',' + r.y + ") height: " + r.height + " width: " + r.width);
-			g.drawString(floatFmt.format(d), r.x, r.y + r.height + 10);			
+			g.drawString(floatFmt.format(d), r.x, r.y + r.height + 10);
+			int startCol = r.x + r.width + 2;
+			g.setFont(boldFont);
+			g.drawString("degToRotate: " + floatFmt.format(degToRotate), startCol, r.y);
+			g.drawString("SP: " + floatFmt.format(Robot.getTable().getNumber("robotTurnSP", 999)), startCol, r.y + boldFont.getSize());
+			g.drawString("PV: " + floatFmt.format(Robot.getTable().getNumber("robotTurnPV", 999)), startCol, r.y + (boldFont.getSize() * 2));
+			g.drawString("Info: " + Robot.getTable().getString("robotInfo", "n/a"), startCol, r.y + (boldFont.getSize() * 3));
 		} else {
 			Robot.getTable().putNumber("targetAngleInFOV", -999);
 			Robot.getTable().putNumber("degToRotate", -999);
@@ -601,7 +612,7 @@ public class Main implements MouseListener {
             	BufferedImage gz = drawGreenZone(drawTargets(img));
         		imgIcon.setImage(gz);
         		imgFrame.repaint();
-        		if (saveFrames) {
+        		if (saveFrames || Robot.getTable().getBoolean("robotSaveFrames", false)) {
         			new imageSaver(img, "Camera", savedFrameCount).start();
         			new imageSaver(gz, "GreenZone", savedFrameCount).start();
         			savedFrameCount += 1;
@@ -729,7 +740,7 @@ public class Main implements MouseListener {
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-23-7/Camera.495.jpg"; 
 		String webCam = "http://10.26.7.12/mjpg/video.mjpg";
 //		theApp.process("stream");
-		theApp.process(webCam);
+		theApp.process(fileName);
     }
 
 	@Override
