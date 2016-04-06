@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -90,7 +91,7 @@ public class Main implements MouseListener {
     private final double cameraMountAngleDeg = 53.0;		//52.0; //55.5;
 //    private final double cameraMountedMidFoVAngle = 180 - cameraMountAngleDeg;
     
-    private boolean saveFrames = false, pausePlayback = false;
+    private boolean saveFrames = false, pausePlayback = false, needFramePath = true;
     private String savedFramePath;
     private int savedFrameCount;
 
@@ -223,9 +224,11 @@ public class Main implements MouseListener {
                     		+ "-" + cal.get(Calendar.MINUTE) + "-" + cal.get(Calendar.SECOND));
                     new File(savedFramePath).mkdir();
                     saveFrames = true;
+                    needFramePath = false;
                 } else {
                     ((JButton)ev.getSource()).setText("Save Frames");
                     saveFrames = false;
+                    needFramePath = true;
                 }
             }
         }); 
@@ -576,7 +579,7 @@ public class Main implements MouseListener {
         System.out.println("opening stream...");
         
         try {
-            camGrabber = new IPCameraFrameGrabber(url);
+            camGrabber = new IPCameraFrameGrabber(url, 3000, 2000, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             System.out.printf("IPCameraFrameGrabber ctor: %s\n", e.getMessage());
         }
@@ -613,6 +616,14 @@ public class Main implements MouseListener {
         		imgIcon.setImage(gz);
         		imgFrame.repaint();
         		if (saveFrames || Robot.getTable().getBoolean("robotSaveFrames", false)) {
+        			if (needFramePath) {
+        				Calendar cal = Calendar.getInstance();
+        				savedFramePath = "savedImages-" + cal.get(Calendar.YEAR) + "-" + (cal.get(Calendar.MONTH) 
+        						+ "-" + cal.get(Calendar.DAY_OF_MONTH) + "." + cal.get(Calendar.HOUR_OF_DAY)
+        						+ "-" + cal.get(Calendar.MINUTE) + "-" + cal.get(Calendar.SECOND));
+        				new File(savedFramePath).mkdir();
+        				needFramePath = false;
+        			}
         			new imageSaver(img, "Camera", savedFrameCount).start();
         			new imageSaver(gz, "GreenZone", savedFrameCount).start();
         			savedFrameCount += 1;
