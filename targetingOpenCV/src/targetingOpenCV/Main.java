@@ -331,10 +331,12 @@ public class Main implements MouseListener {
 			// for now this still selects based on bounding box area and ratio
 			// for more precision, use hull:
 			//		identify nearly rectangular hulls, find their corners, get center point
-        	
+        	double solidity = Imgproc.contourArea(m) / Imgproc.contourArea(matHull);
+        	System.out.println("Solidity: " + solidity);
 			if (rect.area() >= 1000 && rect.area() <= 9000 && ratio >= 1.4 && ratio <= 3.3 //&& rect.y < binImg.size().height * .53
-					) {
+					&& solidity >= 0.4 && solidity <= .51) {
 				System.out.println("Rect area: " + rect.area());
+				System.out.println("Solidity: " + solidity);
 //				System.out.println("\tadding target");
 				targetBoundingRects.add(rect);
 				targets.add(matHull);
@@ -747,11 +749,11 @@ public class Main implements MouseListener {
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/savedImages-2016-1-29.20-31-57/Camera.2098.jpg";
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/savedImages-2016-1-29.20-31-57/Camera.2310.jpg";
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/Camera.634.jpg";
-		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24/Camera.1263.jpg"; //529
+		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24/Camera.518.jpg"; //1263 //529
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-23-7/Camera.495.jpg"; 
 		String webCam = "http://10.26.7.12/mjpg/video.mjpg";
-//		theApp.process("stream");
-		theApp.process(fileName);
+		theApp.process("stream");
+//		theApp.process(fileName);
     }
 
 	@Override
