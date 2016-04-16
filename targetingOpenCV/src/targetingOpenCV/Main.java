@@ -205,7 +205,7 @@ public class Main implements MouseListener {
         targetHeights = new ArrayList<Double>();			// the height in pixels of each target (actually height of convex hull side)
         contours = new ArrayList<MatOfPoint>();
         hullPoints = new ArrayList<Point>();
-        Robot.setUseMDNS(true);
+        Robot.setUseMDNS(false);
         Robot.setTeam(2607);
 	}
 
@@ -334,7 +334,8 @@ public class Main implements MouseListener {
         	double solidity = Imgproc.contourArea(m) / Imgproc.contourArea(matHull);
         	System.out.println("Solidity: " + solidity);
 			if (rect.area() >= 1000 && rect.area() <= 9000 && ratio >= 1.4 && ratio <= 3.3 //&& rect.y < binImg.size().height * .53
-					&& solidity >= 0.4 && solidity <= .51) {
+					//&& solidity >= 0.4 && solidity <= .51
+					) {
 				System.out.println("Rect area: " + rect.area());
 				System.out.println("Solidity: " + solidity);
 //				System.out.println("\tadding target");
@@ -400,7 +401,7 @@ public class Main implements MouseListener {
 		double x = boundingRect.x + (boundingRect.width / 2);  
 		System.out.println("x of target center from boundingRect: " + x);
 		System.out.println("x of target center from rotatedRect: " + rotatedRect.center.x);
-		degToRotate = ((x - 175) * 51.0) / imgWidthPixels;
+		degToRotate = ((x - 196) * 51.0) / imgWidthPixels;
 //		double azimuth = this.boundAngle0to360Degrees(x*kHorizontalFOVDeg/2.0 + heading - kShooterOffsetDeg);
 //		System.out.println("azimuth: " + ((2 * (x / imgWidthPixels)) - 1) * (51.0 / 2.0));  
 		System.out.println("degToRotate: " + degToRotate);
@@ -481,6 +482,7 @@ public class Main implements MouseListener {
 			g.drawString("SP: " + floatFmt.format(Robot.getTable().getNumber("robotTurnSP", 999)), startCol, r.y + boldFont.getSize());
 			g.drawString("PV: " + floatFmt.format(Robot.getTable().getNumber("robotTurnPV", 999)), startCol, r.y + (boldFont.getSize() * 2));
 			g.drawString("Info: " + Robot.getTable().getString("robotInfo", "n/a"), startCol, r.y + (boldFont.getSize() * 3));
+			g.drawString("(cx,cy): (" + intFmt.format(r.x + (r.width / 2)) + ", " + intFmt.format(r.y + (r.height / 2) - 5) + ")", startCol, r.y + (boldFont.getSize() * 4)); 
 		} else {
 			Robot.getTable().putNumber("targetAngleInFOV", -999);
 			Robot.getTable().putNumber("degToRotate", -999);
@@ -530,17 +532,20 @@ public class Main implements MouseListener {
 		BufferedImage gz = new BufferedImage(cm, raster, isAlphaPremultiplied, null);
 		Graphics2D g = gz.createGraphics();
 		
-		g.setColor(Color.GREEN);
+		g.setColor(Color.PINK);
 		g.setStroke(new BasicStroke(4));
 
 		// draw side angle green zone
 		// target from side when aligned 	  		rect: (132,319) height: 52 width: 87
-		g.drawRect(138, 284, 78, 78);
-
+		//g.drawRect(138, 284, 78, 78);
+		
+		// draw batter shot (approx)
+		g.drawRect(187 - (97/2), 117 - (80/2), 97, 80); //90
+		
 		// draw outerworks center green zone
 		// target from outer works when aligned:    rect: (149,346) height: 45 width: 78
 		g.setColor(Color.YELLOW);
-		g.drawRect(144, 304, 74, 75);				// 74, 75
+		g.drawRect(201 - (70/2), 343 - (75/2), 74, 75);				// 74, 75
 		return gz;
 
 		/*	original green zone, from image that was smaller
@@ -752,8 +757,8 @@ public class Main implements MouseListener {
 		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-5.19-44-24/Camera.518.jpg"; //1263 //529
 //		String fileName = "d:/FRC-2016/ControlsDesign/visionTargeting/HHImages/savedImages-2016-2-6.8-23-7/Camera.495.jpg"; 
 		String webCam = "http://10.26.7.12/mjpg/video.mjpg";
-		theApp.process("stream");
-//		theApp.process(fileName);
+//		theApp.process("stream");
+		theApp.process(webCam);
     }
 
 	@Override
